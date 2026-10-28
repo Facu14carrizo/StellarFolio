@@ -1,0 +1,210 @@
+---
+import { tr } from '../i18n';
+const en = Astro.currentLocale === 'en';
+const t = tr(Astro.currentLocale);
+// Marca: la j isométrica del portafolio anterior (PORTAFOLIOJHONGDLP/scripts/logo-mark.mjs), con la paleta de este sitio.
+const MARK = [
+  ['#f3d9b1', 'M39.36 24.24L52.49 31.82L39.36 39.39L26.24 31.82Z'],
+  ['#f3d9b1', 'M13.12 39.39L26.24 46.97L13.12 54.55L0 46.97Z'],
+  ['#f3d9b1', 'M26.24 62.12L39.36 69.7L26.24 77.27L13.12 69.7Z'],
+  ['#645b4d', 'M52.49 92.42L39.36 100L39.36 39.39L52.49 31.82Z'],
+  ['#645b4d', 'M26.24 62.12L13.12 69.7L13.12 54.55L26.24 46.97Z'],
+  ['#a19078', 'M0 77.27L39.36 100L39.36 39.39L26.24 31.82L26.24 77.27L13.12 69.7L13.12 54.55L0 46.97Z'],
+  ['#804d1e', 'M52.49 22.73L39.36 30.3L39.36 15.15L52.49 7.58Z'],
+  ['#c7782f', 'M26.24 22.73L39.36 30.3L39.36 15.15L26.24 7.58Z'],
+  ['#ff9a3c', 'M39.36 0L52.49 7.58L39.36 15.15L26.24 7.58Z'],
+];
+const links = [
+  [t('Proyectos', 'Work'), '#proyectos'],
+  [t('Sobre mí', 'About'), '#sobre-mi'],
+  [t('Contacto', 'Contact'), '#contacto'],
+];
+---
+
+<header class="nav">
+  <a class="brand" href={en ? '/en/' : '/'} aria-label={t('facu14carrizo — inicio', 'facu14carrizo — home')}>
+    <svg class="mark" viewBox="0 0 52.49 100" aria-hidden="true">{MARK.map(([fill, d]) => <path fill={fill} d={d} />)}</svg>
+    facu14carrizo
+  </a>
+  <nav aria-label={t('Principal', 'Main')}>
+    {links.map(([label, href]) => <a href={href}>{label}</a>)}
+  </nav>
+  <div class="act">
+    <!-- the other language's page; the current one is highlighted -->
+    <a class="lang" href={en ? '/' : '/en/'} hreflang={en ? 'es' : 'en'} aria-label={t('Read in English', 'Leer en español')}>
+      <span class:list={{ on: en }}>EN</span>/<span class:list={{ on: !en }}>ES</span>
+    </a>
+    <a class="cta" href="#contacto">
+      <span class="cta-fill" aria-hidden="true"></span>
+      {t('Hablemos', "Let's talk")}
+      <span class="cta-arrow" aria-hidden="true"><span>↗</span><span>↗</span></span>
+    </a>
+  </div>
+</header>
+
+<script>
+  // Hide on scroll down, show on scroll up; solid backdrop once off the top.
+  const nav = document.querySelector<HTMLElement>('.nav')!;
+  const cta = nav.querySelector<HTMLElement>('.cta')!;
+  let last = scrollY;
+
+  addEventListener('scroll', () => {
+    const y = scrollY;
+    if (Math.abs(y - last) < 6) return; // ignore jitter / trackpad noise
+    nav.classList.toggle('scrolled', y > 40);
+    nav.classList.toggle('hidden', y > last && y > 120);
+    last = y;
+  }, { passive: true });
+
+  // fill bursts from the point the cursor enters/leaves
+  const aim = (e: PointerEvent) => {
+    const r = cta.getBoundingClientRect();
+    cta.style.setProperty('--x', `${e.clientX - r.left}px`);
+    cta.style.setProperty('--y', `${e.clientY - r.top}px`);
+  };
+  cta.addEventListener('pointerenter', aim);
+  cta.addEventListener('pointerleave', aim);
+</script>
+
+<style>
+  /* No transform/filter on .nav itself: it would trap the mobile fixed nav. The backdrop lives in ::before. */
+  .nav {
+    --ease: cubic-bezier(.16, 1, .3, 1);
+    --accent: #ff9a3c;
+    position: fixed;
+    z-index: 10;
+    inset: 0 0 auto;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: clamp(14px, 2vw, 22px) clamp(16px, 4vw, 48px);
+    animation: in 1.6s 1.2s both;
+  }
+  @keyframes in { from { opacity: 0; } }
+
+  .nav::before {
+    content: '';
+    position: absolute; inset: 0;
+    z-index: -1;
+    background: rgba(0, 0, 0, .72);
+    backdrop-filter: blur(16px) saturate(140%);
+    border-bottom: 1px solid rgba(243, 217, 177, .1);
+    opacity: 0;
+    transition: opacity .4s, translate .5s var(--ease);
+  }
+  .scrolled::before { opacity: 1; }
+
+  .brand, nav, .act { transition: translate .5s var(--ease), opacity .4s; }
+  .hidden:not(:has(:focus-visible))::before,
+  .hidden:not(:has(:focus-visible)) nav { translate: 0 -120px; opacity: 0; } /* only links + backdrop hide; brand and CTA stay pinned */
+
+  /* brand only appears once the hero signature has faded */
+  .brand {
+    justify-self: start;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    color: var(--ink);
+    text-decoration: none;
+    opacity: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .mark { height: 26px; width: auto; display: block; }
+  .scrolled .brand { opacity: 1; }
+
+  nav { display: flex; gap: clamp(24px, 3vw, 40px); }
+  nav a {
+    position: relative;
+    padding: 6px 0;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: .01em;
+    color: var(--ink);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  /* underline draws from the left on hover */
+  nav a::after {
+    content: '';
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 1px;
+    background: var(--accent);
+    scale: 0 1;
+    transform-origin: right;
+    transition: scale .5s var(--ease);
+  }
+  nav a:hover { color: #fff; }
+  nav a:hover::after { scale: 1 1; transform-origin: left; }
+
+  .act { justify-self: end; display: flex; align-items: center; gap: 10px; }
+
+  .lang {
+    display: flex; gap: 4px;
+    padding: 10px 12px;
+    font-size: 11px; font-weight: 600; letter-spacing: .08em; line-height: 1;
+    color: rgba(243, 217, 177, .35);
+    text-decoration: none;
+    border: 1px solid rgba(243, 217, 177, .2);
+    border-radius: 999px;
+    transition: border-color .3s;
+  }
+  .lang .on { color: var(--ink); }
+  .lang:hover { border-color: var(--accent); }
+
+  /* CTA: solid, highest-contrast element in the bar */
+  .cta {
+    --x: 50%; --y: 50%;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 16px 11px 18px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    line-height: 1;
+    color: #000;
+    background: var(--ink);
+    text-decoration: none;
+    border-radius: 999px;
+  }
+  .cta-fill {
+    position: absolute; inset: 0;
+    z-index: -1;
+    background: var(--accent);
+    clip-path: circle(0 at var(--x) var(--y));
+    transition: clip-path .6s var(--ease);
+  }
+  .cta:hover .cta-fill { clip-path: circle(160% at var(--x) var(--y)); }
+
+  .cta-arrow { display: grid; overflow: hidden; font-size: 13px; }
+  .cta-arrow span { grid-area: 1 / 1; transition: translate .5s var(--ease); }
+  .cta-arrow span + span { translate: -110% 110%; }
+  .cta:hover .cta-arrow span:first-child { translate: 110% -110%; }
+  .cta:hover .cta-arrow span + span { translate: 0 0; transition-delay: .08s; }
+
+  .nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+  /* phone: brand + CTA on top, links in a bottom bar (thumb reach) that slides down when hidden */
+  @media (max-width: 640px) {
+    .nav { grid-template-columns: 1fr auto; }
+    nav {
+      position: fixed;
+      bottom: max(16px, env(safe-area-inset-bottom));
+      left: 50%;
+      translate: -50% 0;
+      gap: 24px;
+      padding: 14px 24px;
+      border: 1px solid rgba(243, 217, 177, .15);
+      border-radius: 999px;
+      background: rgba(0, 0, 0, .72);
+      backdrop-filter: blur(16px);
+    }
+    .hidden:not(:has(:focus-visible)) nav { translate: -50% calc(100% + 40px); }
+    nav a { font-size: 13px; }
+    .cta { padding: 10px 14px 10px 16px; font-size: 11px; }
+  }
+</style>

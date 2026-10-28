@@ -1,0 +1,103 @@
+---
+import { tr } from '../i18n';
+const t = tr(Astro.currentLocale);
+---
+
+<div class="loader" role="progressbar" aria-label={t('Cargando', 'Loading')} aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+  <svg class="hole" viewBox="-40 -40 80 80" aria-hidden="true">
+    <!-- accretion disk behind, the event horizon, photon ring and the near half of the disk on top -->
+    <ellipse class="track" rx="34" ry="7" transform="rotate(-12)" />
+    <ellipse class="fill" rx="34" ry="7" transform="rotate(-12)" pathLength="1" />
+    <circle r="16" fill="#000" />
+    <circle class="track" r="16" />
+    <circle class="fill" r="16" pathLength="1" transform="rotate(-90)" />
+    <path class="track" d="M-34 0 A34 7 0 0 0 34 0" transform="rotate(-12)" />
+    <path class="fill" d="M-34 0 A34 7 0 0 0 34 0" transform="rotate(-12)" pathLength="1" />
+  </svg>
+  <p class="name" aria-hidden="true">{[...'FACU14CARRIZO'].map((c) => <span>{c}</span>)}</p>
+  <span class="mono pct" aria-hidden="true">000</span>
+</div>
+<noscript><style>.loader { display: none !important; }</style></noscript>
+
+<script>
+  const el = document.querySelector<HTMLElement>('.loader')!;
+  const pct = el.querySelector('.pct')!;
+  const hero = document.querySelector('.hero');
+
+  // Real milestones: fonts, every asset, and the hero's big shader compiled (it adds .ready).
+  const steps: Promise<unknown>[] = [
+    document.fonts.ready,
+    new Promise((r) => (document.readyState === 'complete' ? r(0) : addEventListener('load', r, { once: true }))),
+    new Promise((r) => {
+      if (!hero || hero.classList.contains('ready')) return r(0);
+      new MutationObserver((_, o) => { if (hero.classList.contains('ready')) { o.disconnect(); r(0); } })
+        .observe(hero, { attributes: true, attributeFilter: ['class'] });
+    }),
+  ];
+  let done = 0;
+  steps.forEach((s) => s.then(() => done++));
+  setTimeout(() => { done = steps.length; }, 15000); // never trap the visitor behind the loader
+
+  const letters = [...el.querySelectorAll<HTMLElement>('.name span')];
+  let shown = 0;
+
+  const tick = () => {
+    const all = done >= steps.length;
+    // shown progress creeps toward the next milestone while waiting, then sprints when all are in
+    shown += ((all ? 1 : (done + .8) / steps.length) - shown) * (all ? .08 : .02);
+    const v = Math.round(shown * 100);
+    pct.textContent = String(v).padStart(3, '0');
+    el.ariaValueNow = String(v);
+    el.style.setProperty('--p', shown.toFixed(4));
+    letters.forEach((l, i) => l.classList.toggle('lit', shown * letters.length > i + .5));
+    if (all && shown > .995) {
+      el.classList.add('done');
+      setTimeout(() => el.remove(), 1100);
+      return;
+    }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+</script>
+
+<style>
+  .loader {
+    --p: 0;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 14px;
+    background: #000;
+    transition: opacity .9s ease, visibility 0s .9s;
+  }
+  :global(html:has(.loader:not(.done))) { overflow: hidden; }
+
+  .hole { width: 72px; overflow: visible; transition: scale 1s cubic-bezier(.76, 0, .24, 1); }
+  .hole * { fill: none; stroke-width: 1.5; stroke-linecap: round; }
+  .hole circle[fill] { fill: #000; stroke: none; }
+  .track { stroke: #3a3a3a; }
+  .fill {
+    stroke: #fff;
+    stroke-dasharray: 1;
+    stroke-dashoffset: calc(1 - var(--p));
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, calc(var(--p) * .8)));
+  }
+
+  .name {
+    font-weight: 800;
+    font-size: clamp(14px, 1.6vw, 17px);
+    letter-spacing: .12em;
+    padding-left: .12em; /* balance the trailing letter-spacing */
+  }
+  .name span { color: #3a3a3a; transition: color .4s; }
+  .name .lit { color: #fff; }
+  .pct { font-size: 11px; font-variant-numeric: tabular-nums; color: rgba(255, 255, 255, .35); }
+
+  /* exit: the hole swallows the screen and fades to the hero */
+  .done { opacity: 0; visibility: hidden; pointer-events: none; }
+  .done .hole { scale: 6; }
+  @media (prefers-reduced-motion: reduce) { .done .hole { scale: 1; } }
+</style>

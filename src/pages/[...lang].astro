@@ -1,0 +1,27 @@
+---
+import Base from '../layouts/Base.astro';
+import Loader from '../components/Loader.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import Work from '../components/Work.astro';
+import Gallery from '../components/Gallery.astro';
+import Contact from '../components/Contact.astro';
+import Footer from '../components/Footer.astro';
+import { tr } from '../i18n';
+
+// "/" is Spanish, "/en/" English
+export const getStaticPaths = () => [{ params: { lang: undefined } }, { params: { lang: 'en' } }];
+const t = tr(Astro.currentLocale);
+---
+
+<Base title={t('Facundo Carrizo — Portafolio', 'Facundo Carrizo — Portfolio')} description={t('Facundo Carrizo, desarrollador full-stack en Buenos Aires, Argentina. Especializado en React, .NET, TypeScript y soluciones digitales de alto impacto.', 'Facundo Carrizo, full-stack developer based in Buenos Aires, Argentina. Specialized in React, .NET, TypeScript and high-impact digital solutions.')}>
+  <Loader />
+  <Header />
+  <main>
+    <Hero />
+    <Work />
+    <Gallery />
+    <Contact />
+  </main>
+  <Footer />
+</Base>
